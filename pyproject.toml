@@ -1,0 +1,47 @@
+[project]
+name = "KeySound"
+version = "0.1.0"
+description = "KeySound - звуки при нажатии клавиш (Windows)."
+requires-python = ">=3.13"
+authors = [
+  { name = "Никита", email = "mered1an@live.com" },
+]
+readme = "README.md"
+keywords = ["keyboard", "sound", "windows", "tray"]
+urls = { homepage = "https://github.com/meR1D1AN/KeySound" }
+dependencies = [
+    "keyboard>=0.13.5",
+    "pillow>=12.1.1",
+    "pre-commit>=4.5.1",
+    "pygame>=2.6.1",
+    "pyinstaller>=6.19.0",
+    "pystray>=0.19.5",
+    "ruff>=0.15.5",
+]
+
+[tool.ruff]
+line-length = 119
+exclude = [
+    ".git",
+    ".gitignore",
+    "__pycache__",
+    "__init__.py",
+    "pyproject.toml",
+    "build",
+    "dist",
+    ".venv",
+    "*.spec",
+    "*.ps1"
+]
+target-version = "py313"
+fix = true
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+ignore = ["W293", "A003"]
+select = ["E", "F", "I", "B", "C", "A", "N", "UP"]
+mccabe.max-complexity = 12
