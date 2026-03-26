@@ -8,9 +8,15 @@ from PIL import Image, ImageDraw
 
 from keysound_audio import init_mixer, load_sound, play_sound, shutdown_mixer
 from keysound_sounds import SoundFiles
+from keysound_stats import KeyStats
 
 
 def _data_base_dir() -> Path:
+    """Корень данных, упакованных с приложением (папка sounds и т.д.).
+
+    В собранном exe — временная распаковка PyInstaller (_MEIPASS), только чтение.
+    Для постоянной статистики см. keysound_stats.stats_file_path — другой путь.
+    """
     base_dir = getattr(sys, '_MEIPASS', None)
     return Path(base_dir) if base_dir is not None else Path(__file__).resolve().parent
 
@@ -76,25 +82,33 @@ class KeySoundApp:
         self._player = SoundPlayer(SoundFiles(sounds_dir=sounds_dir))
         self._pressed: set[str] = set()
         self._key_count: int = 0
+        self._stats = KeyStats()
+        self._stats.load()
 
         self._icon = pystray.Icon(
             'keysound',
             _make_tray_image(),
-            title=self._title,
+            title=self._stats_summary_text(),
             menu=pystray.Menu(pystray.MenuItem('Закрыть программу', self._quit)),
         )
 
-    @property
-    def _title(self) -> str:
-        return f'Прожмакал клавиш: {self._key_count}'
+    def _stats_summary_text(self) -> str:
+        """Текст для подсказки трея и уведомления при выходе."""
+        return (
+            f'Сегодня: {self._stats.today_count()}\n'
+            f'Вчера: {self._stats.yesterday_count()}\n'
+            f'За всё время: {self._stats.total}\n'
+            f'За эту сессию: {self._key_count}'
+        )
 
     def _quit(self, icon: pystray.Icon) -> None:
         # Лёгкое уведомление в трее с итоговым числом нажатий.
         try:
-            icon.notify(
-                f'За время работы программы ты нажал: {self._key_count} клавиш',
-                'KeySound',
-            )
+            self._stats.save()
+        except OSError:
+            pass
+        try:
+            icon.notify(self._stats_summary_text(), 'KeySound')
         except Exception:
             pass
         shutdown_mixer()
@@ -110,7 +124,8 @@ class KeySoundApp:
                 return
             self._pressed.add(name)
             self._key_count += 1
-            self._icon.title = self._title
+            self._stats.record_keypress()
+            self._icon.title = self._stats_summary_text()
             self._player.play_for_key(name)
             return
 
