@@ -10,6 +10,9 @@ from keysound_audio import init_mixer, load_sound, play_sound, shutdown_mixer
 from keysound_sounds import SoundFiles
 from keysound_stats import KeyStats
 
+# Сброс статистики на диск после стольких учтённых нажатий (без закрытия из трея).
+_AUTOSAVE_EVERY_KEYPRESSES = 100
+
 
 def _data_base_dir() -> Path:
     """Корень данных, упакованных с приложением (папка sounds и т.д.).
@@ -82,6 +85,7 @@ class KeySoundApp:
         self._player = SoundPlayer(SoundFiles(sounds_dir=sounds_dir))
         self._pressed: set[str] = set()
         self._key_count: int = 0
+        self._presses_since_save: int = 0
         self._stats = KeyStats()
         self._stats.load()
 
@@ -125,6 +129,13 @@ class KeySoundApp:
             self._pressed.add(name)
             self._key_count += 1
             self._stats.record_keypress()
+            self._presses_since_save += 1
+            if self._presses_since_save >= _AUTOSAVE_EVERY_KEYPRESSES:
+                self._presses_since_save = 0
+                try:
+                    self._stats.save()
+                except OSError:
+                    pass
             self._icon.title = self._stats_summary_text()
             self._player.play_for_key(name)
             return
