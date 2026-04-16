@@ -3,12 +3,6 @@ $ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot
 
-uv run pyinstaller `
-  --onefile `
-  --noconsole `
-  --name keysound `
-  --add-data "sounds;sounds" `
-  main.py
+uv run python build.py
 
 Write-Host ""
-Write-Host "Built: dist/keysound.exe"
